@@ -1,0 +1,21 @@
+# Dados pessoais e sessão
+config.json
+.session
+dados/
+*.jpeg
+*.jpg
+*.png
+*.pdf
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp
+distribuicao/COMO_PUBLICAR.md

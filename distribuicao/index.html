@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AlcanceMax — Instalação</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f1117;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    .logo {
+      font-size: 2.4rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+      letter-spacing: -0.5px;
+    }
+
+    .tagline {
+      color: #888;
+      font-size: 1rem;
+      margin-bottom: 40px;
+    }
+
+    .card {
+      background: #1a1d2e;
+      border: 1px solid #2a2d3e;
+      border-radius: 16px;
+      padding: 36px;
+      max-width: 560px;
+      width: 100%;
+      margin-bottom: 24px;
+    }
+
+    .detected-os {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #12142000;
+      border: 1px solid #2e3a5e;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 28px;
+    }
+
+    .os-icon { font-size: 1.8rem; }
+
+    .os-text { flex: 1; }
+    .os-text strong { display: block; font-size: 0.95rem; color: #c8d0e0; }
+    .os-text span { font-size: 0.8rem; color: #666; }
+
+    .os-badge {
+      background: #1e3a5f;
+      color: #64b5f6;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-download {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 16px 24px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      font-size: 1.05rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.2s, transform 0.1s;
+      margin-bottom: 12px;
+    }
+    .btn-download:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-download:active { transform: translateY(0); }
+
+    .btn-secondary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 12px 20px;
+      background: transparent;
+      color: #888;
+      font-size: 0.9rem;
+      border: 1px solid #2a2d3e;
+      border-radius: 10px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-secondary:hover { border-color: #667eea; color: #aaa; }
+
+    .steps {
+      margin-top: 28px;
+      border-top: 1px solid #2a2d3e;
+      padding-top: 24px;
+    }
+
+    .steps h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #555;
+      margin-bottom: 16px;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .step-num {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: #2a2d3e;
+      color: #667eea;
+      font-size: 0.8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .step-content strong { display: block; font-size: 0.9rem; color: #c8d0e0; margin-bottom: 2px; }
+    .step-content span { font-size: 0.82rem; color: #666; line-height: 1.5; }
+
+    code {
+      background: #0d0f1a;
+      border: 1px solid #2a2d3e;
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.82rem;
+      color: #a78bfa;
+    }
+
+    .code-block {
+      background: #0d0f1a;
+      border: 1px solid #2a2d3e;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .code-block code {
+      background: none;
+      border: none;
+      padding: 0;
+      flex: 1;
+      font-size: 0.83rem;
+      word-break: break-all;
+    }
+    .copy-btn {
+      background: #2a2d3e;
+      border: none;
+      color: #888;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover { background: #3a3d4e; color: #ccc; }
+
+    .other-os {
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px solid #2a2d3e;
+    }
+    .other-os h3 {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #444;
+      margin-bottom: 12px;
+    }
+    .os-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+    .os-pill {
+      background: transparent;
+      border: 1px solid #2a2d3e;
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 0.78rem;
+      color: #555;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+      text-decoration: none;
+    }
+    .os-pill:hover { border-color: #667eea; color: #aaa; }
+
+    .footer {
+      text-align: center;
+      font-size: 0.78rem;
+      color: #333;
+      margin-top: 16px;
+    }
+
+    /* Seções de SO (mostradas/escondidas via JS) */
+    .os-section { display: none; }
+    .os-section.active { display: block; }
+
+    @media (max-width: 480px) {
+      .card { padding: 24px 20px; }
+      .logo { font-size: 1.9rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo">AlcanceMax</div>
+  <div class="tagline">Ferramenta de Prospecção Inteligente</div>
+
+  <div class="card">
+
+    <!-- Badge do SO detectado -->
+    <div class="detected-os">
+      <div class="os-icon" id="os-icon">💻</div>
+      <div class="os-text">
+        <strong id="os-name">Detectando seu sistema...</strong>
+        <span id="os-sub">aguarde</span>
+      </div>
+      <div class="os-badge" id="os-badge">auto</div>
+    </div>
+
+    <!-- ── macOS ──────────────────────────────────────────────── -->
+    <div class="os-section" id="section-mac">
+      <a id="btn-mac" href="#" class="btn-download" onclick="return false;">
+        ⬇️ &nbsp; Baixar Instalador para Mac
+      </a>
+
+      <div class="steps">
+        <h3>Passo a passo</h3>
+
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <strong>Abra o Terminal</strong>
+            <span>Pressione <code>⌘ Cmd + Espaço</code>, digite <strong>Terminal</strong> e pressione Enter</span>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>Cole o comando abaixo e pressione Enter</strong>
+            <div class="code-block">
+              <code id="mac-cmd">curl -fsSL URL_DO_SCRIPT | bash</code>
+              <button class="copy-btn" onclick="copyCmd('mac-cmd')">Copiar</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <strong>Aguarde a instalação (~2 minutos)</strong>
+            <span>O instalador baixa e configura tudo automaticamente</span>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <strong>Abra o app</strong>
+            <span>Clique duas vezes em <code>AlcanceMax.command</code> na Área de Trabalho</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Windows ────────────────────────────────────────────── -->
+    <div class="os-section" id="section-win">
+      <a id="btn-win" href="#" class="btn-download">
+        ⬇️ &nbsp; Baixar Instalador para Windows
+      </a>
+
+      <div class="steps">
+        <h3>Passo a passo</h3>
+
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <strong>Baixe o instalador</strong>
+            <span>Clique no botão acima para baixar o arquivo <code>instalar.bat</code></span>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>Execute como Administrador</strong>
+            <span>Clique com o botão <strong>direito</strong> em <code>instalar.bat</code> → "Executar como administrador"</span>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <strong>Aguarde a instalação (~3 minutos)</strong>
+            <span>O instalador baixa Python (se necessário) e configura tudo automaticamente</span>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <strong>Abra o app</strong>
+            <span>Clique duas vezes em <code>AlcanceMax</code> na Área de Trabalho</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Linux ──────────────────────────────────────────────── -->
+    <div class="os-section" id="section-linux">
+      <a id="btn-linux" href="#" class="btn-download" onclick="return false;">
+        ⬇️ &nbsp; Baixar Instalador para Linux
+      </a>
+
+      <div class="steps">
+        <h3>Passo a passo</h3>
+
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <strong>Abra o Terminal</strong>
+            <span>Atalho padrão: <code>Ctrl + Alt + T</code></span>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>Cole o comando abaixo e pressione Enter</strong>
+            <div class="code-block">
+              <code id="linux-cmd">curl -fsSL URL_DO_SCRIPT | bash</code>
+              <button class="copy-btn" onclick="copyCmd('linux-cmd')">Copiar</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <strong>Aguarde a instalação (~2 minutos)</strong>
+            <span>O instalador baixa e configura tudo automaticamente</span>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <strong>Abra o app</strong>
+            <span>Clique duas vezes em <code>AlcanceMax.command</code> na Área de Trabalho</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Outros sistemas -->
+    <div class="other-os">
+      <h3>Outro sistema?</h3>
+      <div class="os-pills">
+        <a href="#" class="os-pill" onclick="showOS('mac'); return false;">🍎 macOS</a>
+        <a href="#" class="os-pill" onclick="showOS('win'); return false;">🪟 Windows</a>
+        <a href="#" class="os-pill" onclick="showOS('linux'); return false;">🐧 Linux</a>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    AlcanceMax &copy; 2025 &nbsp;·&nbsp; Suporte: <a href="mailto:suporte@alcancemax.com.br" style="color:#555">suporte@alcancemax.com.br</a>
+  </div>
+
+  <script>
+    // ── Configuração — atualize estas URLs ─────────────────────
+    const URLS = {
+      // Comando curl para Mac/Linux (link para instalar.sh raw no GitHub)
+      mac_cmd:    "curl -fsSL https://github.com/allan180903-pixel/alcancemax/releases/latest/download/instalar.sh | bash",
+      linux_cmd:  "curl -fsSL https://github.com/allan180903-pixel/alcancemax/releases/latest/download/instalar.sh | bash",
+      // Link direto para download do instalar.bat (Windows)
+      win_bat:    "https://github.com/allan180903-pixel/alcancemax/releases/latest/download/instalar.bat",
+    };
+    // ───────────────────────────────────────────────────────────
+
+    function detectOS() {
+      const ua = navigator.userAgent;
+      if (/Mac/.test(ua) && !/iPhone|iPad/.test(ua)) return 'mac';
+      if (/Win/.test(ua)) return 'win';
+      if (/Linux/.test(ua)) return 'linux';
+      return 'mac';
+    }
+
+    function showOS(os) {
+      document.querySelectorAll('.os-section').forEach(s => s.classList.remove('active'));
+      document.getElementById('section-' + os).classList.add('active');
+
+      const icons = { mac: '🍎', win: '🪟', linux: '🐧' };
+      const names = { mac: 'macOS detectado', win: 'Windows detectado', linux: 'Linux detectado' };
+      const subs  = { mac: 'macOS 11 ou superior recomendado', win: 'Windows 10 / 11', linux: 'Ubuntu, Debian, Fedora e outros' };
+      const badge = { mac: 'macOS', win: 'Windows', linux: 'Linux' };
+
+      document.getElementById('os-icon').textContent  = icons[os];
+      document.getElementById('os-name').textContent  = names[os];
+      document.getElementById('os-sub').textContent   = subs[os];
+      document.getElementById('os-badge').textContent = badge[os];
+    }
+
+    function initURLs() {
+      // Mac
+      document.getElementById('mac-cmd').textContent   = URLS.mac_cmd;
+      document.getElementById('btn-mac').removeAttribute('onclick');
+
+      // Linux
+      document.getElementById('linux-cmd').textContent = URLS.linux_cmd;
+      document.getElementById('btn-linux').removeAttribute('onclick');
+
+      // Windows
+      document.getElementById('btn-win').href = URLS.win_bat;
+    }
+
+    function copyCmd(id) {
+      const text = document.getElementById(id).textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = event.target;
+        btn.textContent = 'Copiado!';
+        btn.style.color = '#4ade80';
+        setTimeout(() => { btn.textContent = 'Copiar'; btn.style.color = ''; }, 2000);
+      });
+    }
+
+    // Init
+    initURLs();
+    showOS(detectOS());
+  </script>
+
+</body>
+</html>
