@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AlcanceMax — Instalacao</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green-dark:    #064E3B;
+      --green-mid:     #059669;
+      --green-hover:   #047857;
+      --green-light:   #D1FAE5;
+      --green-bright:  #10B981;
+      --bg:            #F8FAFC;
+      --white:         #FFFFFF;
+      --text:          #0F172A;
+      --text-sec:      #64748B;
+      --border:        #E2E8F0;
+      --shadow-card:   0 4px 24px rgba(0,0,0,0.08);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      opacity: 0;
+      animation: fadeIn 0.5s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
+    /* ── NAV ─────────────────────────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 60px;
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      z-index: 100;
+    }
+
+    .nav-logo {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--green-dark);
+      letter-spacing: -0.3px;
+      text-decoration: none;
+    }
+
+    .nav-link {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-sec);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .nav-link:hover { color: var(--green-mid); }
+
+    /* ── HERO ────────────────────────────────────────────────────────────── */
+    .hero {
+      padding-top: 120px;
+      padding-bottom: 60px;
+      text-align: center;
+      background: linear-gradient(180deg, #F0FDF4 0%, var(--bg) 100%);
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: var(--green-light);
+      color: var(--green-dark);
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 4px 14px;
+      border-radius: 20px;
+      letter-spacing: 0.03em;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.15;
+      letter-spacing: -0.5px;
+      margin-bottom: 20px;
+    }
+
+    .hero p {
+      font-size: 1.1rem;
+      color: var(--text-sec);
+      max-width: 520px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    /* ── CARD DE INSTALACAO ──────────────────────────────────────────────── */
+    .install-card {
+      max-width: 560px;
+      margin: 48px auto 0;
+      background: var(--white);
+      border-radius: 16px;
+      box-shadow: var(--shadow-card);
+      padding: 36px;
+    }
+
+    /* Badge OS detectado */
+    .detected-os {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: #F8FAFC;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 28px;
+    }
+
+    .os-icon { font-size: 1.9rem; line-height: 1; flex-shrink: 0; }
+
+    .os-text { flex: 1; }
+    .os-text strong { display: block; font-size: 0.95rem; font-weight: 600; color: var(--text); }
+    .os-text span { font-size: 0.8rem; color: var(--text-sec); margin-top: 2px; display: block; }
+
+    .os-chip {
+      background: var(--green-light);
+      color: var(--green-dark);
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    /* Botao download */
+    .btn-download {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 16px 24px;
+      background: var(--green-mid);
+      color: #FFFFFF;
+      font-size: 1.05rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+      margin-bottom: 12px;
+      font-family: 'Inter', sans-serif;
+    }
+    .btn-download:hover {
+      background: var(--green-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(5,150,105,0.3);
+    }
+    .btn-download:active { transform: translateY(0); }
+
+    /* Passos de instalacao */
+    .steps {
+      margin-top: 28px;
+      border-top: 1px solid var(--border);
+      padding-top: 24px;
+    }
+
+    .steps-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-sec);
+      margin-bottom: 18px;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 18px;
+      align-items: flex-start;
+    }
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--green-light);
+      color: var(--green-dark);
+      font-size: 0.8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .step-content strong {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 3px;
+    }
+    .step-content span {
+      font-size: 0.83rem;
+      color: var(--text-sec);
+      line-height: 1.55;
+    }
+
+    code {
+      background: #F1F5F9;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 2px 7px;
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.82rem;
+      color: var(--green-dark);
+    }
+
+    .code-block {
+      background: #F8FAFC;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .code-block code {
+      background: none;
+      border: none;
+      padding: 0;
+      flex: 1;
+      font-size: 0.82rem;
+      word-break: break-all;
+      color: var(--green-dark);
+    }
+    .copy-btn {
+      background: var(--white);
+      border: 1px solid var(--border);
+      color: var(--text-sec);
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      font-family: 'Inter', sans-serif;
+    }
+    .copy-btn:hover {
+      background: var(--green-light);
+      border-color: var(--green-bright);
+      color: var(--green-dark);
+    }
+
+    /* Outro sistema? */
+    .other-os {
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+    .other-os-title {
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-sec);
+      margin-bottom: 12px;
+    }
+    .os-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+    .os-pill {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-sec);
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      font-family: 'Inter', sans-serif;
+    }
+    .os-pill:hover {
+      border-color: var(--green-mid);
+      color: var(--green-dark);
+      background: var(--green-light);
+    }
+
+    /* Seccoes de SO */
+    .os-section { display: none; }
+    .os-section.active { display: block; }
+
+    /* ── FEATURES ────────────────────────────────────────────────────────── */
+    .features {
+      max-width: 860px;
+      margin: 80px auto 0;
+      padding: 0 20px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .feature-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 24px;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .feature-card:hover {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      transform: translateY(-2px);
+    }
+
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      background: var(--green-light);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    .feature-icon svg { width: 22px; height: 22px; }
+
+    .feature-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .feature-card p {
+      font-size: 0.88rem;
+      color: var(--text-sec);
+      line-height: 1.6;
+    }
+
+    /* ── FOOTER ──────────────────────────────────────────────────────────── */
+    footer {
+      margin-top: 80px;
+      padding: 32px 20px;
+      text-align: center;
+      border-top: 1px solid var(--border);
+    }
+
+    footer p {
+      font-size: 0.82rem;
+      color: var(--text-sec);
+    }
+
+    footer a { color: var(--green-mid); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVO ──────────────────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      nav { padding: 0 20px; }
+      .hero { padding-top: 100px; padding-bottom: 40px; }
+      .hero h1 { font-size: 2.1rem; }
+      .install-card { margin: 32px 16px 0; padding: 24px 20px; }
+      .features { margin-top: 48px; }
+      .features-grid { grid-template-columns: 1fr; gap: 16px; }
+    }
+
+    @media (max-width: 420px) {
+      .hero h1 { font-size: 1.75rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="#">AlcanceMax</a>
+    <a class="nav-link" href="mailto:suporte@alcancemax.com.br">Suporte</a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-badge">v1.0 &mdash; Disponivel agora</div>
+    <h1>Prospeccao que<br>gera resultados.</h1>
+    <p>E-mail e WhatsApp automatizados, gestao de leads e relatorios &mdash; em uma ferramenta simples instalada direto no seu computador.</p>
+
+    <!-- CARD DE INSTALACAO -->
+    <div class="install-card">
+
+      <!-- Badge OS detectado -->
+      <div class="detected-os">
+        <div class="os-icon" id="os-icon">&#128187;</div>
+        <div class="os-text">
+          <strong id="os-name">Detectando seu sistema...</strong>
+          <span id="os-sub">aguarde</span>
+        </div>
+        <div class="os-chip" id="os-chip">detectado automaticamente</div>
+      </div>
+
+      <!-- macOS -->
+      <div class="os-section" id="section-mac">
+        <a id="btn-mac" href="#" class="btn-download" onclick="return false;">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v12m0 0l-4-4m4 4l4-4"/></svg>
+          Baixar Instalador para Mac
+        </a>
+        <div class="steps">
+          <div class="steps-title">Como instalar</div>
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>Abra o Terminal</strong>
+              <span>Pressione <code>Cmd + Espaco</code>, digite <strong>Terminal</strong> e pressione Enter</span>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>Cole o comando abaixo e pressione Enter</strong>
+              <div class="code-block">
+                <code id="mac-cmd">carregando...</code>
+                <button class="copy-btn" onclick="copyCmd('mac-cmd', this)">Copiar</button>
+              </div>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>Aguarde a instalacao (~2 minutos)</strong>
+              <span>O instalador baixa e configura tudo automaticamente</span>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <strong>Abra o app</strong>
+              <span>Clique duas vezes em <code>AlcanceMax.command</code> na Area de Trabalho</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Windows -->
+      <div class="os-section" id="section-win">
+        <a id="btn-win" href="#" class="btn-download">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v12m0 0l-4-4m4 4l4-4"/></svg>
+          Baixar Instalador para Windows
+        </a>
+        <div class="steps">
+          <div class="steps-title">Como instalar</div>
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>Baixe o instalador</strong>
+              <span>Clique no botao acima para baixar o arquivo <code>instalar.bat</code></span>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>Execute como Administrador</strong>
+              <span>Clique com o botao <strong>direito</strong> em <code>instalar.bat</code> e escolha &ldquo;Executar como administrador&rdquo;</span>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>Aguarde a instalacao (~3 minutos)</strong>
+              <span>O instalador baixa Python (se necessario) e configura tudo automaticamente</span>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <strong>Abra o app</strong>
+              <span>Clique duas vezes em <code>AlcanceMax</code> na Area de Trabalho</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Linux -->
+      <div class="os-section" id="section-linux">
+        <a id="btn-linux" href="#" class="btn-download" onclick="return false;">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v12m0 0l-4-4m4 4l4-4"/></svg>
+          Baixar Instalador para Linux
+        </a>
+        <div class="steps">
+          <div class="steps-title">Como instalar</div>
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>Abra o Terminal</strong>
+              <span>Atalho padrao: <code>Ctrl + Alt + T</code></span>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>Cole o comando abaixo e pressione Enter</strong>
+              <div class="code-block">
+                <code id="linux-cmd">carregando...</code>
+                <button class="copy-btn" onclick="copyCmd('linux-cmd', this)">Copiar</button>
+              </div>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>Aguarde a instalacao (~2 minutos)</strong>
+              <span>O instalador baixa e configura tudo automaticamente</span>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <strong>Abra o app</strong>
+              <span>Execute <code>./AlcanceMax.sh</code> no terminal ou pelo atalho na Area de Trabalho</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Outro sistema? -->
+      <div class="other-os">
+        <div class="other-os-title">Outro sistema?</div>
+        <div class="os-pills">
+          <a href="#" class="os-pill" onclick="showOS('mac'); return false;">&#127822; Mac</a>
+          <a href="#" class="os-pill" onclick="showOS('win'); return false;">&#129695; Windows</a>
+          <a href="#" class="os-pill" onclick="showOS('linux'); return false;">&#128039; Linux</a>
+        </div>
+      </div>
+
+    </div>
+    <!-- /install-card -->
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features">
+    <div class="features-grid">
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <h3>E-mail automatizado</h3>
+        <p>Envie campanhas personalizadas com o nome e empresa de cada lead. Compativel com Gmail, Outlook e qualquer provedor SMTP.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+          </svg>
+        </div>
+        <h3>WhatsApp integrado</h3>
+        <p>Envio automatico via WhatsApp Web. Modo automatico para grandes listas ou manual para abordagens personalizadas.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+        </div>
+        <h3>Relatorios completos</h3>
+        <p>Acompanhe taxas de envio, leads por status e atividade diaria. Exporte tudo para Excel com um clique.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>AlcanceMax &copy; 2025 &nbsp;&middot;&nbsp; <a href="mailto:suporte@alcancemax.com.br">suporte@alcancemax.com.br</a></p>
+  </footer>
+
+  <script>
+    // URLs — repositorio allan180903-pixel
+    const URLS = {
+      mac_cmd:   "curl -fsSL https://raw.githubusercontent.com/allan180903-pixel/alcancemax/main/instalar.sh | bash",
+      linux_cmd: "curl -fsSL https://raw.githubusercontent.com/allan180903-pixel/alcancemax/main/instalar.sh | bash",
+      win_bat:   "https://github.com/allan180903-pixel/alcancemax/releases/latest/download/instalar.bat",
+    };
+
+    function detectOS() {
+      const ua = navigator.userAgent;
+      if (/Mac/.test(ua) && !/iPhone|iPad/.test(ua)) return 'mac';
+      if (/Win/.test(ua)) return 'win';
+      if (/Linux/.test(ua)) return 'linux';
+      return 'mac';
+    }
+
+    function showOS(os) {
+      document.querySelectorAll('.os-section').forEach(function(s) {
+        s.classList.remove('active');
+      });
+      var sec = document.getElementById('section-' + os);
+      if (sec) sec.classList.add('active');
+
+      var icons = { mac: '🍎', win: '🫟', linux: '🐧' };
+      var names = { mac: 'macOS detectado', win: 'Windows detectado', linux: 'Linux detectado' };
+      var subs  = { mac: 'macOS 11 ou superior recomendado', win: 'Windows 10 / 11', linux: 'Ubuntu, Debian, Fedora e outros' };
+
+      document.getElementById('os-icon').textContent = icons[os] || '💻';
+      document.getElementById('os-name').textContent = names[os] || os;
+      document.getElementById('os-sub').textContent  = subs[os] || '';
+    }
+
+    function initURLs() {
+      // Mac
+      var macCmd = document.getElementById('mac-cmd');
+      if (macCmd) macCmd.textContent = URLS.mac_cmd;
+      var btnMac = document.getElementById('btn-mac');
+      if (btnMac) { btnMac.removeAttribute('onclick'); btnMac.href = '#'; }
+
+      // Linux
+      var linuxCmd = document.getElementById('linux-cmd');
+      if (linuxCmd) linuxCmd.textContent = URLS.linux_cmd;
+      var btnLinux = document.getElementById('btn-linux');
+      if (btnLinux) { btnLinux.removeAttribute('onclick'); btnLinux.href = '#'; }
+
+      // Windows
+      var btnWin = document.getElementById('btn-win');
+      if (btnWin) btnWin.href = URLS.win_bat;
+    }
+
+    function copyCmd(id, btn) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      navigator.clipboard.writeText(el.textContent).then(function() {
+        var original = btn.textContent;
+        btn.textContent = 'Copiado!';
+        btn.style.background = '#D1FAE5';
+        btn.style.borderColor = '#10B981';
+        btn.style.color = '#065F46';
+        setTimeout(function() {
+          btn.textContent = original;
+          btn.style.background = '';
+          btn.style.borderColor = '';
+          btn.style.color = '';
+        }, 2000);
+      });
+    }
+
+    // Init
+    initURLs();
+    showOS(detectOS());
+  </script>
+
+</body>
+</html>
