@@ -1,7 +1,7 @@
 # AlcanceMax - Instalador PowerShell
 $ErrorActionPreference = "Stop"
 $APP_DIR = "$env:USERPROFILE\AlcanceMax"
-$ZIP_URL = "https://github.com/allan180903-pixel/alcancemax/releases/latest/download/alcancemax.zip"
+$ZIP_URL = "https://raw.githubusercontent.com/allan180903-pixel/alcancemax/main/alcancemax.zip"
 $TMP_ZIP = "$env:TEMP\alcancemax_install.zip"
 $DESKTOP = [Environment]::GetFolderPath("Desktop")
 
