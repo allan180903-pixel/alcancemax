@@ -463,24 +463,23 @@
 
       <!-- Windows -->
       <div class="os-section" id="section-win">
-        <a id="btn-win" href="#" class="btn-download">
-          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v12m0 0l-4-4m4 4l4-4"/></svg>
-          Baixar Instalador para Windows
-        </a>
         <div class="steps">
-          <div class="steps-title">Como instalar</div>
+          <div class="steps-title">Como instalar no Windows</div>
           <div class="step-item">
             <div class="step-num">1</div>
             <div class="step-content">
-              <strong>Baixe o instalador</strong>
-              <span>Clique no botao acima para baixar o arquivo <code>instalar.bat</code></span>
+              <strong>Abra o PowerShell como Administrador</strong>
+              <span>Aperte a tecla <strong>Windows</strong>, digite <code>powershell</code>, clique com o <strong>botao direito</strong> e escolha <strong>&ldquo;Executar como administrador&rdquo;</strong></span>
             </div>
           </div>
           <div class="step-item">
             <div class="step-num">2</div>
             <div class="step-content">
-              <strong>Execute como Administrador</strong>
-              <span>Clique com o botao <strong>direito</strong> em <code>instalar.bat</code> e escolha &ldquo;Executar como administrador&rdquo;</span>
+              <strong>Cole o comando abaixo e aperte Enter</strong>
+              <span style="display:block;margin-top:8px;">
+                <code id="win-cmd" style="display:block;background:#0F172A;color:#10B981;padding:12px 14px;border-radius:8px;font-size:12px;word-break:break-all;line-height:1.6;">Set-ExecutionPolicy Bypass -Scope Process -Force; iwr https://raw.githubusercontent.com/allan180903-pixel/alcancemax/main/distribuicao/instalar.ps1 -useb | iex</code>
+                <button onclick="navigator.clipboard.writeText(document.getElementById('win-cmd').innerText)" style="margin-top:8px;padding:6px 14px;background:#059669;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;">Copiar comando</button>
+              </span>
             </div>
           </div>
           <div class="step-item">
