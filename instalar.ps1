@@ -108,13 +108,18 @@ streamlit run app.py --server.headless true --server.port 8501
 pause
 "@ | Set-Content $launcher -Encoding UTF8
 
-$shell = New-Object -ComObject WScript.Shell
-$shortcut = $shell.CreateShortcut("$DESKTOP\AlcanceMax.lnk")
-$shortcut.TargetPath = $launcher
-$shortcut.WorkingDirectory = $APP_DIR
-$shortcut.WindowStyle = 1
-$shortcut.Save()
-Write-Host "OK: Atalho criado" -ForegroundColor Green
+try {
+    $shell = New-Object -ComObject WScript.Shell
+    $shortcut = $shell.CreateShortcut("$DESKTOP\AlcanceMax.lnk")
+    $shortcut.TargetPath = $launcher
+    $shortcut.WorkingDirectory = $APP_DIR
+    $shortcut.WindowStyle = 1
+    $shortcut.Save()
+    Write-Host "OK: Atalho criado em $DESKTOP" -ForegroundColor Green
+} catch {
+    Write-Host "Aviso: nao foi possivel criar atalho automaticamente." -ForegroundColor Yellow
+    Write-Host "Para abrir o app, execute: $launcher" -ForegroundColor Yellow
+}
 
 Write-Host ""
 Write-Host "  ========================" -ForegroundColor Cyan
