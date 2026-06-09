@@ -10,8 +10,8 @@ Write-Host "  AlcanceMax - Instalador" -ForegroundColor Cyan
 Write-Host "  ========================" -ForegroundColor Cyan
 Write-Host ""
 
-# [1/5] Python
-Write-Host "[1/5] Verificando Python 3..." -ForegroundColor Yellow
+# [1/6] Python
+Write-Host "[1/6] Verificando Python 3..." -ForegroundColor Yellow
 $python = $null
 foreach ($cmd in @("python", "python3", "py")) {
     try {
@@ -38,8 +38,8 @@ if (-not $python) {
 }
 Write-Host "OK: $( & $python --version 2>&1 )" -ForegroundColor Green
 
-# [2/5] Download
-Write-Host "[2/5] Baixando AlcanceMax..." -ForegroundColor Yellow
+# [2/6] Download
+Write-Host "[2/6] Baixando AlcanceMax..." -ForegroundColor Yellow
 try {
     Invoke-WebRequest -Uri $ZIP_URL -OutFile $TMP_ZIP -UseBasicParsing
 } catch {
@@ -52,8 +52,8 @@ try {
 }
 Write-Host "OK: Download concluido" -ForegroundColor Green
 
-# [3/5] Extrair
-Write-Host "[3/5] Instalando arquivos..." -ForegroundColor Yellow
+# [3/6] Extrair
+Write-Host "[3/6] Instalando arquivos..." -ForegroundColor Yellow
 if (Test-Path $APP_DIR) {
     if (Test-Path "$APP_DIR\config.json") {
         Copy-Item "$APP_DIR\config.json" "$env:TEMP\alcancemax_config_backup.json" -Force
@@ -79,10 +79,22 @@ if (Test-Path "$env:TEMP\alcancemax_config_backup.json") {
     Copy-Item "$env:TEMP\alcancemax_config_backup.json" "$APP_DIR\config.json" -Force
     Remove-Item "$env:TEMP\alcancemax_config_backup.json" -Force
 }
+
+# Baixa arquivos principais direto do GitHub (garante versao mais recente)
+$BASE_URL = "https://raw.githubusercontent.com/allan180903-pixel/alcancemax/main"
+foreach ($arquivo in @("whatsapp_helper.py", "app.py")) {
+    try {
+        Invoke-WebRequest -Uri "$BASE_URL/$arquivo" -OutFile "$APP_DIR\$arquivo" -UseBasicParsing
+    } catch {}
+}
+
+# Limpa cache Python
+Remove-Item "$APP_DIR\__pycache__" -Recurse -Force -ErrorAction SilentlyContinue
+
 Write-Host "OK: Arquivos em $APP_DIR" -ForegroundColor Green
 
-# [4/5] Dependencias
-Write-Host "[4/5] Instalando dependencias Python (pode demorar 2-3 min)..." -ForegroundColor Yellow
+# [4/6] Dependencias
+Write-Host "[4/6] Instalando dependencias Python (pode demorar 2-3 min)..." -ForegroundColor Yellow
 & $python -m venv "$APP_DIR\venv"
 & "$APP_DIR\venv\Scripts\pip.exe" install --upgrade pip --quiet
 & "$APP_DIR\venv\Scripts\pip.exe" install -r "$APP_DIR\requirements.txt" --quiet
@@ -93,12 +105,12 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-Host "OK: Dependencias instaladas" -ForegroundColor Green
 
-# [5/5] Atalho
-Write-Host "[5/5] Criando atalho na Area de Trabalho..." -ForegroundColor Yellow
+# [5/6] Atalho
+Write-Host "[5/6] Criando atalho na Area de Trabalho..." -ForegroundColor Yellow
 $launcher = "$APP_DIR\Iniciar.bat"
 @"
 @echo off
-chcp 65001 >/dev/null
+chcp 65001 >nul 2>&1
 cd /d "$APP_DIR"
 call venv\Scripts\activate.bat
 echo Iniciando AlcanceMax...
@@ -121,6 +133,7 @@ try {
     Write-Host "Para abrir o app, execute: $launcher" -ForegroundColor Yellow
 }
 
+# [6/6] Pronto
 Write-Host ""
 Write-Host "  ========================" -ForegroundColor Cyan
 Write-Host "  AlcanceMax instalado!"    -ForegroundColor Cyan
@@ -128,4 +141,8 @@ Write-Host "  ========================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Clique duas vezes em 'AlcanceMax' na Area de Trabalho para abrir." -ForegroundColor White
 Write-Host ""
-Read-Host "Pressione Enter para sair"
+
+$iniciar = Read-Host "Deseja abrir o AlcanceMax agora? (S/N)"
+if ($iniciar -match "^[Ss]") {
+    Start-Process $launcher
+}
