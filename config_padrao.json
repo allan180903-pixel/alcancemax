@@ -1,0 +1,50 @@
+{
+  "email": {
+    "remetente": "",
+    "senha": "",
+    "smtp_server": "smtp.gmail.com",
+    "smtp_port": 587,
+    "nome_exibicao": "",
+    "assinatura_imagem": ""
+  },
+  "filtros": {
+    "status": [
+      "Novo",
+      "Email Enviado",
+      "WhatsApp Enviado",
+      "Contatado",
+      "Respondeu",
+      "Reuniao Agendada",
+      "Fechado",
+      "Sem Interesse"
+    ],
+    "segmentos": [
+      "Arquiteto",
+      "Designer de Interiores",
+      "Construtora",
+      "Incorporadora",
+      "Loja de Moveis",
+      "Decorador",
+      "Outro"
+    ]
+  },
+  "fallbacks": {
+    "nome": "prezado(a)",
+    "empresa": "sua empresa"
+  },
+  "templates": {
+    "email": [
+      {
+        "nome": "Prospecção Inicial",
+        "assunto": "Olá {nome} — [Assunto da sua mensagem]",
+        "corpo": "Olá {nome}, tudo bem?\n\n[Escreva sua mensagem aqui]\n\nAtenciosamente,\n{nome_exibicao}"
+      }
+    ],
+    "whatsapp": [
+      {
+        "nome": "Prospecção Inicial",
+        "mensagem": "Olá {nome}, tudo bem?\n\n[Escreva sua mensagem aqui]"
+      }
+    ]
+  }
+}
