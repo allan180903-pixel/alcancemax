@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 $APP_DIR = "$env:USERPROFILE\AlcanceMax"
 $ZIP_URL = "https://github.com/allan180903-pixel/alcancemax/releases/latest/download/alcancemax.zip"
 $TMP_ZIP = "$env:TEMP\alcancemax_install.zip"
-$DESKTOP = "$env:USERPROFILE\Desktop"
+$DESKTOP = [Environment]::GetFolderPath("Desktop")
 
 Write-Host ""
 Write-Host "  AlcanceMax - Instalador" -ForegroundColor Cyan
