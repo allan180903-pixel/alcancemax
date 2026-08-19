@@ -121,9 +121,12 @@ def _run_applescript(script):
             pass
 
 
-def _send_whatsapp_windows(phone, message, nome="", empresa="", wait_time=18, file_path=None):
-    """Envio automático via WhatsApp Web no Windows."""
+def _send_whatsapp_windows(phone, message, nome="", empresa="", wait_time=18, files=None):
+    """Envio automático via WhatsApp Web no Windows (mensagem + imagens/vídeos).
+    Documentos (PDF, etc.) não são suportados no automático do Windows."""
     import webbrowser
+
+    files = [f for f in (files or []) if f]
 
     phone_clean = clean_phone(phone)
     if not phone_clean:
@@ -150,46 +153,291 @@ def _send_whatsapp_windows(phone, message, nome="", empresa="", wait_time=18, fi
 
     time.sleep(2)
 
-    # Arquivo de imagem
-    if file_path:
-        _MEDIA_EXTS = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff',
-                       '.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.m4v', '.3gp'}
-        _file_ext = os.path.splitext(file_path)[1].lower()
-        if _file_ext in _MEDIA_EXTS:
-            try:
-                abs_path = os.path.abspath(file_path)
-                ps_copy = f'''
+    if not files:
+        return True, "Mensagem enviada com sucesso."
+
+    # Anexos: envia cada imagem/vídeo em sequência
+    _MEDIA_EXTS = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff',
+                   '.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.m4v', '.3gp'}
+    enviadas = 0
+    docs = 0
+    for fp in files:
+        if os.path.splitext(fp)[1].lower() not in _MEDIA_EXTS:
+            docs += 1
+            continue
+        try:
+            abs_path = os.path.abspath(fp)
+            # Copia imagem para clipboard E traz a janela do browser para frente
+            ps_copy = f'''
 Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
 $img = [System.Drawing.Image]::FromFile("{abs_path.replace(chr(92), chr(92)+chr(92))}")
 [System.Windows.Forms.Clipboard]::SetImage($img)
 $img.Dispose()
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class Win32Focus {{
+    [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
+    [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+}}
+"@
+foreach ($name in @("chrome","msedge","firefox")) {{
+    $procs = Get-Process $name -ErrorAction SilentlyContinue
+    foreach ($p in $procs) {{
+        if ($p.MainWindowHandle -ne [IntPtr]::Zero) {{
+            [Win32Focus]::ShowWindow($p.MainWindowHandle, 9)
+            [Win32Focus]::SetForegroundWindow($p.MainWindowHandle)
+            break
+        }}
+    }}
+}}
 '''
-                subprocess.run(
-                    ['powershell', '-WindowStyle', 'Hidden', '-Command', ps_copy],
-                    capture_output=True, timeout=10
-                )
-                time.sleep(1)
-                pyautogui.hotkey('ctrl', 'v')
-                time.sleep(4)
-                pyautogui.press('return')
+            subprocess.run(
+                ['powershell', '-WindowStyle', 'Hidden', '-Command', ps_copy],
+                capture_output=True, timeout=10
+            )
+            time.sleep(1)
+            # Clica no input do WhatsApp Web para garantir foco na aba correta
+            screen_w, screen_h = pyautogui.size()
+            pyautogui.click(int(screen_w * 0.65), screen_h - 80)
+            time.sleep(0.5)
+            pyautogui.hotkey('ctrl', 'v')
+            time.sleep(4)
+            pyautogui.press('return')
+            time.sleep(2)
+            enviadas += 1
+        except Exception:
+            pass
+
+    partes = ["Mensagem enviada"]
+    if enviadas:
+        partes.append(f"{enviadas} imagem(ns)")
+    if docs:
+        partes.append(f"{docs} documento(s) para anexar manualmente")
+    return True, " + ".join(partes) + "."
+
+
+def _attach_file_mac(file_path, wx, wy, ww, wh):
+    """Anexa UM arquivo ao chat do WhatsApp Web já aberto e o envia.
+    NÃO fecha o tab. Retorna (ok, mensagem). Usado em loop para vários anexos."""
+    ATTACH_X_OFFSET = 535
+    ATTACH_Y_BOTTOM = 39
+    DOC_Y_ABOVE     = 297
+    FOTOS_Y_ABOVE   = 263
+    # IMAGENS vão pelo clipboard (colar). VÍDEOS vão por "Fotos e vídeos"
+    # (enviados como vídeo que toca). DOCUMENTOS vão por "Documento".
+    _IMAGE_EXTS = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff'}
+    _VIDEO_EXTS = {'.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.m4v', '.3gp'}
+
+    _file_ext = os.path.splitext(file_path)[1].lower()
+    _is_image = _file_ext in _IMAGE_EXTS
+    _is_video = _file_ext in _VIDEO_EXTS
+    _menu_label = "Fotos e vídeos" if _is_video else "Documento"
+
+    abs_path = os.path.abspath(file_path)
+    tmp_dir  = tempfile.mkdtemp()
+    safe_tmp = os.path.join(tmp_dir, f"attach{_file_ext}")
+    shutil.copy2(abs_path, safe_tmp)
+    safe_path = safe_tmp.replace('\\', '\\\\').replace('"', '\\"')
+
+    attach_x = wx + ATTACH_X_OFFSET
+    attach_y = wy + wh - ATTACH_Y_BOTTOM
+    menu_x   = attach_x
+    menu_y   = attach_y - (FOTOS_Y_ABOVE if _is_video else DOC_Y_ABOVE)
+
+    # Garante que o tab do WhatsApp está em frente
+    _run_applescript('''tell application "Google Chrome"
+    repeat with w in windows
+        repeat with t in tabs of w
+            if URL of t contains "web.whatsapp.com" then
+                set active tab index of w to (get index of t)
+                set index of w to 1
+                exit repeat
+            end if
+        end repeat
+    end repeat
+end tell
+tell application "Google Chrome" to activate''')
+    time.sleep(1)
+
+    # ══ IMAGENS: clipboard PNG + Cmd+V ═══════════════════════════════════
+    if _is_image:
+        jxa_script = f'''
+ObjC.import('AppKit');
+var path = "{safe_tmp}";
+var img = $.NSImage.alloc.initWithContentsOfFile(path);
+if (img && img.isValid) {{
+    var tiff = img.TIFFRepresentation;
+    var rep  = $.NSBitmapImageRep.imageRepWithData(tiff);
+    var png  = rep.representationUsingTypeProperties($.NSBitmapImageFileTypePNG, {{}});
+    var pb   = $.NSPasteboard.generalPasteboard;
+    pb.clearContents;
+    pb.setDataForType(png, 'public.png');
+    "ok";
+}} else {{
+    "error: imagem invalida";
+}}
+'''
+        r_clip = subprocess.run(
+            ['osascript', '-l', 'JavaScript', '-e', jxa_script],
+            capture_output=True, text=True
+        )
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        if r_clip.returncode != 0 or 'error' in r_clip.stdout.lower():
+            err = r_clip.stderr.strip() or r_clip.stdout.strip() or "erro desconhecido"
+            return False, f"Erro ao copiar imagem: {err}"
+
+        chat_x = wx + (ww * 2 // 3)
+        chat_y = wy + wh - 60
+        paste_script = f'''tell application "Google Chrome"
+    repeat with w in windows
+        repeat with t in tabs of w
+            if URL of t contains "web.whatsapp.com" then
+                set active tab index of w to (get index of t)
+                set index of w to 1
+                exit repeat
+            end if
+        end repeat
+    end repeat
+end tell
+tell application "Google Chrome" to activate
+delay 0.8
+tell application "System Events"
+    tell process "Google Chrome"
+        click at {{{chat_x}, {chat_y}}}
+        delay 0.8
+        keystroke "v" using command down
+        delay 5
+        key code 36
+        delay 2
+    end tell
+end tell'''
+        r_paste = _run_applescript(paste_script)
+        if r_paste.returncode != 0:
+            err = r_paste.stderr.strip() or r_paste.stdout.strip() or "erro desconhecido"
+            return False, f"Erro ao colar imagem: {err}"
+        return True, "ok"
+
+    # ══ DOCUMENTOS: clica no "+" e encontra "Documento" no DOM ══════════════════
+    time.sleep(2)
+    js_attach = (
+        'var btn=null;'
+        'document.querySelectorAll("button").forEach(function(b){'
+        '  if(!btn && b.querySelector("[data-icon=\\"attach-menu-plus\\"]")) btn=b;'
+        '});'
+        'if(btn){btn.click();"ok";}else{"not found";}'
+    )
+    _run_applescript(f'''tell application "Google Chrome"
+    repeat with w in windows
+        repeat with t in tabs of w
+            if URL of t contains "web.whatsapp.com" then
+                set active tab index of w to (get index of t)
+                set index of w to 1
+                exit repeat
+            end if
+        end repeat
+    end repeat
+end tell
+tell application "Google Chrome"
+    execute active tab of front window javascript "{js_attach}"
+end tell''')
+    time.sleep(2)
+
+    js_pos = (
+        'var res="not found";'
+        'document.querySelectorAll("li span,li div,[role=\\"button\\"] span").forEach(function(el){'
+        '  if(res==="not found" && el.textContent.trim()==="' + _menu_label + '"){'
+        '    var r=el.getBoundingClientRect();'
+        '    res=Math.round(r.left+r.width/2)+","+Math.round(r.top+r.height/2);'
+        '  }'
+        '});res;'
+    )
+    r_pos2 = _run_applescript(f'''tell application "Google Chrome"
+    set jsResult to execute active tab of front window javascript "{js_pos}"
+end tell
+return jsResult''')
+
+    doc_clicked = False
+    if r_pos2.returncode == 0:
+        pos_str = r_pos2.stdout.strip().strip('"')
+        if ',' in pos_str and pos_str != 'not found':
+            try:
+                rel_x, rel_y = [int(v) for v in pos_str.split(',')]
+                abs_doc_x = wx + rel_x
+                abs_doc_y = wy + rel_y + 88
+                _run_applescript(f'''tell application "System Events"
+    click at {{{abs_doc_x}, {abs_doc_y}}}
+end tell''')
+                doc_clicked = True
                 time.sleep(2)
-                return True, "Mensagem e imagem enviadas com sucesso."
-            except Exception as e:
-                return True, f"Mensagem enviada. Erro ao enviar imagem: {e}"
-        else:
-            return True, "Mensagem enviada. Documentos devem ser anexados manualmente no Windows."
+            except Exception:
+                pass
 
-    return True, "Mensagem enviada com sucesso."
+    if not doc_clicked:
+        time.sleep(1)
+        pyautogui.click(attach_x, attach_y)
+        time.sleep(2.5)
+        pyautogui.click(menu_x, menu_y)
+        time.sleep(1.5)
+
+    # Tempo de upload proporcional ao tamanho do arquivo (vídeo grande precisa de mais)
+    try:
+        _mb = os.path.getsize(abs_path) / (1024 * 1024)
+    except Exception:
+        _mb = 1
+    _upload_wait = int(min(max(6, _mb * 1.3), 240))  # 6s mínimo, ~1.3s/MB, teto 240s
+
+    script3 = f'''set the clipboard to "{safe_path}"
+delay 0.5
+tell application "System Events"
+    tell process "Google Chrome"
+        set waited to 0
+        repeat
+            try
+                if exists sheet 1 of front window then exit repeat
+            end try
+            if (count of windows) > 1 then exit repeat
+            delay 0.5
+            set waited to waited + 0.5
+            if waited >= 15 then exit repeat
+        end repeat
+        delay 0.5
+        keystroke "g" using {{command down, shift down}}
+        delay 2.5
+        keystroke "a" using {{command down}}
+        delay 0.3
+        keystroke "v" using {{command down}}
+        delay 1
+        key code 36
+        delay 2.5
+        key code 36
+        delay {_upload_wait}
+        keystroke return
+        delay 2
+    end tell
+end tell'''
+    r3 = _run_applescript(script3)
+    shutil.rmtree(tmp_dir, ignore_errors=True)
+    if r3.returncode != 0:
+        err = r3.stderr.strip() or r3.stdout.strip() or "erro desconhecido"
+        return False, f"Erro ao enviar documento: {err}"
+    return True, "ok"
 
 
-def send_whatsapp_auto(phone, message, nome="", empresa="", wait_time=18, file_path=None, close_tab=True):
+def send_whatsapp_auto(phone, message, nome="", empresa="", wait_time=18, file_path=None, file_paths=None, close_tab=True):
     """
-    Envia mensagem (+ arquivo opcional) via WhatsApp Web.
+    Envia mensagem (+ 1 ou vários arquivos opcionais) via WhatsApp Web.
     Reutiliza o tab existente para evitar 'WhatsApp aberto em outra janela'.
     Usa pyautogui para cliques de hardware (evita timeout -1712 do System Events).
     """
+    # Normaliza a lista de arquivos (aceita file_path único OU file_paths lista)
+    files = [f for f in (file_paths or []) if f]
+    if not files and file_path:
+        files = [file_path]
+
     if not IS_MACOS:
-        return _send_whatsapp_windows(phone, message, nome, empresa, wait_time, file_path)
+        return _send_whatsapp_windows(phone, message, nome, empresa, wait_time, files)
     phone_clean = clean_phone(phone)
     if not phone_clean:
         return False, "Número de telefone inválido."
@@ -198,20 +446,6 @@ def send_whatsapp_auto(phone, message, nome="", empresa="", wait_time=18, file_p
     encoded = urllib.parse.quote(msg)
     url = f"https://web.whatsapp.com/send?phone={phone_clean}&text={encoded}"
     safe_url = url.replace('"', '\\"')
-
-    ATTACH_X_OFFSET = 535   # "+" está ~535px da borda esquerda (Chrome tela cheia)
-    ATTACH_Y_BOTTOM = 39    # "+" está ~39px acima da borda inferior do Chrome
-    DOC_Y_ABOVE     = 297   # "Documento"  — posição calibrada
-    FOTOS_Y_ABOVE   = 263   # "Fotos e vídeos" — posição calibrada
-
-    # Detecta o tipo de arquivo para escolher o item correto do menu
-    _MEDIA_EXTS = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff',
-                   '.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.m4v', '.3gp'}
-    _file_ext = os.path.splitext(file_path)[1].lower() if file_path else ''
-    _is_media  = _file_ext in _MEDIA_EXTS
-
-    # close_block não é mais embutido nos scripts AppleScript;
-    # o fechamento é feito em Python após o envio.
 
     # ── Parte 1: abre/navega o tab, espera carregar, envia mensagem ───────────
     script1 = f'''tell application "Google Chrome"
@@ -270,20 +504,13 @@ delay 2'''
         err = r1.stderr.strip() or r1.stdout.strip() or "erro desconhecido"
         return False, f"Erro AppleScript: {err}"
 
-    # Sem arquivo: só fecha o tab e retorna
-    if not file_path:
+    # Sem arquivos: fecha o tab e retorna
+    if not files:
         if close_tab:
             _close_whatsapp_tab()
         return True, "Mensagem enviada com sucesso."
 
-    # ── Parte 2: prepara path temporário ASCII (evita problemas com acentos) ────
-    abs_path = os.path.abspath(file_path)
-    tmp_dir  = tempfile.mkdtemp()
-    safe_tmp = os.path.join(tmp_dir, f"attach{_file_ext}")
-    shutil.copy2(abs_path, safe_tmp)
-    safe_path = safe_tmp.replace('\\', '\\\\').replace('"', '\\"')
-
-    # Pega posição da janela do Chrome para calcular coordenadas
+    # Geometria da janela do Chrome (uma vez para todos os anexos)
     r_pos = _run_applescript('''tell application "System Events"
     tell process "Google Chrome"
         set p to position of front window
@@ -291,141 +518,30 @@ delay 2'''
     end tell
 end tell
 return ((item 1 of p) as string) & "," & ((item 2 of p) as string) & "," & ((item 1 of s) as string) & "," & ((item 2 of s) as string)''')
-
     try:
         wx, wy, ww, wh = [int(x) for x in r_pos.stdout.strip().split(',')]
     except Exception:
         wx, wy, ww, wh = 0, 121, 1440, 779  # fallback tela cheia
 
-    attach_x = wx + ATTACH_X_OFFSET
-    attach_y = wy + wh - ATTACH_Y_BOTTOM
-    menu_x   = attach_x
-    menu_y   = attach_y - (FOTOS_Y_ABOVE if _is_media else DOC_Y_ABOVE)
-
-    # Garante que o Chrome com o tab do WhatsApp está em frente
-    _run_applescript('''tell application "Google Chrome"
-    repeat with w in windows
-        repeat with t in tabs of w
-            if URL of t contains "web.whatsapp.com" then
-                set active tab index of w to (get index of t)
-                set index of w to 1
-                exit repeat
-            end if
-        end repeat
-    end repeat
-end tell
-tell application "Google Chrome" to activate''')
-    time.sleep(1)
-
-    # ══ IMAGENS: clipboard PNG + Cmd+V ═══════════════════════════════════════════
-    # WhatsApp Web aceita Cmd+V de imagem direto no chat — sem NSOpenPanel.
-    # IMPORTANTE: precisa escrever como PNG (public.png), não TIFF.
-    # Chrome/WhatsApp Web não lê TIFF da clipboard via Web Clipboard API.
-    if _is_media:
-        jxa_script = f'''
-ObjC.import('AppKit');
-var path = "{safe_tmp}";
-var img = $.NSImage.alloc.initWithContentsOfFile(path);
-if (img && img.isValid) {{
-    var tiff = img.TIFFRepresentation;
-    var rep  = $.NSBitmapImageRep.imageRepWithData(tiff);
-    var png  = rep.representationUsingTypeProperties($.NSBitmapImageFileTypePNG, {{}});
-    var pb   = $.NSPasteboard.generalPasteboard;
-    pb.clearContents;
-    pb.setDataForType(png, 'public.png');
-    "ok";
-}} else {{
-    "error: imagem invalida";
-}}
-'''
-        r_clip = subprocess.run(
-            ['osascript', '-l', 'JavaScript', '-e', jxa_script],
-            capture_output=True, text=True
-        )
-        try:
-            shutil.rmtree(tmp_dir, ignore_errors=True)
-        except Exception:
-            pass
-
-        if r_clip.returncode != 0 or 'error' in r_clip.stdout.lower():
-            err = r_clip.stderr.strip() or r_clip.stdout.strip() or "erro desconhecido"
-            return False, f"Erro ao copiar imagem: {err}"
-
-        # Clica no input do chat (painel direito — ~2/3 da largura do Chrome)
-        # e cola a imagem via Cmd+V
-        chat_x = wx + (ww * 2 // 3)   # centro do painel direito (~960px)
-        chat_y = wy + wh - 60           # barra inferior do chat
-
-        paste_script = f'''tell application "Google Chrome" to activate
-delay 0.5
-tell application "System Events"
-    tell process "Google Chrome"
-        click at {{{chat_x}, {chat_y}}}
-        delay 0.8
-        keystroke "v" using command down
-        delay 5
-        key code 36
-        delay 2
-    end tell
-end tell'''
-        r_paste = _run_applescript(paste_script)
-        if r_paste.returncode != 0:
-            err = r_paste.stderr.strip() or r_paste.stdout.strip() or "erro desconhecido"
-            return False, f"Erro ao colar imagem: {err}"
-
-        if close_tab:
-            _close_whatsapp_tab()
-        return True, "Mensagem e imagem enviadas com sucesso."
-
-    # ══ DOCUMENTOS: NSOpenPanel via botão "+" ════════════════════════════════════
-    time.sleep(3)
-    pyautogui.click(attach_x, attach_y)     # abre menu de anexo
-    time.sleep(2.5)
-    pyautogui.click(menu_x, menu_y)         # clica em "Documento"
-
-    script3 = f'''set the clipboard to "{safe_path}"
-delay 0.5
-tell application "System Events"
-    tell process "Google Chrome"
-        set waited to 0
-        repeat
-            try
-                if exists sheet 1 of front window then exit repeat
-            end try
-            if (count of windows) > 1 then exit repeat
-            delay 0.5
-            set waited to waited + 0.5
-            if waited >= 15 then exit repeat
-        end repeat
-        delay 0.5
-        keystroke "g" using {{command down, shift down}}
-        delay 2.5
-        keystroke "a" using {{command down}}
-        delay 0.3
-        keystroke "v" using {{command down}}
-        delay 1
-        key code 36
-        delay 2.5
-        key code 36
-        delay 6
-        keystroke return
-        delay 2
-    end tell
-end tell'''
-
-    r3 = _run_applescript(script3)
-    try:
-        shutil.rmtree(tmp_dir, ignore_errors=True)
-    except Exception:
-        pass
-
-    if r3.returncode != 0:
-        err = r3.stderr.strip() or r3.stdout.strip() or "erro desconhecido"
-        return False, f"Erro ao enviar documento: {err}"
+    # Envia cada arquivo em sequência no mesmo chat
+    enviados = 0
+    falhas = []
+    for idx, f in enumerate(files):
+        ok, m = _attach_file_mac(f, wx, wy, ww, wh)
+        if ok:
+            enviados += 1
+        else:
+            falhas.append(f"{os.path.basename(f)}: {m}")
+        if idx < len(files) - 1:
+            time.sleep(3)  # respiro entre anexos
 
     if close_tab:
         _close_whatsapp_tab()
-    return True, "Mensagem e documento enviados com sucesso."
+
+    if falhas:
+        return (enviados > 0), (f"Mensagem enviada. {enviados}/{len(files)} arquivo(s) OK. "
+                                f"Falha: {'; '.join(falhas)}")
+    return True, f"Mensagem e {enviados} arquivo(s) enviados com sucesso."
 
 
 def send_whatsapp_file_auto(phone, file_path, wait_time=18):

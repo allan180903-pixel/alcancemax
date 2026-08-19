@@ -82,7 +82,7 @@ if (Test-Path "$env:TEMP\alcancemax_config_backup.json") {
 
 # Baixa arquivos principais direto do GitHub (garante versao mais recente)
 $BASE_URL = "https://raw.githubusercontent.com/allan180903-pixel/alcancemax/main"
-foreach ($arquivo in @("whatsapp_helper.py", "app.py")) {
+foreach ($arquivo in @("whatsapp_helper.py", "app.py", "email_sender.py", "ai_helper.py", "requirements.txt")) {
     try {
         Invoke-WebRequest -Uri "$BASE_URL/$arquivo" -OutFile "$APP_DIR\$arquivo" -UseBasicParsing
     } catch {}
@@ -112,11 +112,10 @@ $launcher = "$APP_DIR\Iniciar.bat"
 @echo off
 chcp 65001 >nul 2>&1
 cd /d "$APP_DIR"
-call venv\Scripts\activate.bat
 echo Iniciando AlcanceMax...
 echo Acesse no navegador: http://localhost:8501
 echo Para fechar: pressione Ctrl+C nesta janela
-streamlit run app.py --server.headless true --server.port 8501
+venv\Scripts\python.exe -m streamlit run app.py --server.headless true --server.port 8501
 pause
 "@ | Set-Content $launcher -Encoding UTF8
 

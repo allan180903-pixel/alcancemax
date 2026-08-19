@@ -13,6 +13,7 @@ import email_sender as es
 import whatsapp_helper as wh
 import report_generator as rg
 import license as lic
+import ai_helper as ai
 
 # ── PAGE CONFIG ──────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -711,21 +712,79 @@ elif page == "E-mail":
             selected_template_name = st.selectbox("Template", template_names)
             template = next(t for t in templates_email if t['nome'] == selected_template_name)
 
-            assunto = st.text_input("Assunto", value=template.get('assunto', ''))
-            corpo = st.text_area("Corpo do e-mail", value=template.get('corpo', ''), height=200)
+            # Carrega o template nos campos quando o template selecionado muda
+            if st.session_state.get("_email_last_tmpl") != selected_template_name:
+                st.session_state["email_assunto_field"] = template.get('assunto', '')
+                st.session_state["email_corpo_field"] = template.get('corpo', '')
+                st.session_state["_email_last_tmpl"] = selected_template_name
+
+            # ── Gerador com IA ────────────────────────────────────────────
+            if ai.ia_disponivel(config):
+                with st.expander("✨ Gerar com IA", expanded=False):
+                    ia_desc_email = st.text_area(
+                        "Descreva o produto ou oferta",
+                        key="ia_email_desc",
+                        placeholder="Ex: Fechadura SLIM biométrica para gavetas e portas de armário, abertura por digital, design ultrafino.",
+                        height=90)
+                    if st.button("✨ Gerar e-mail com IA", key="ia_email_btn"):
+                        if not ia_desc_email.strip():
+                            st.warning("Descreva o produto para a IA gerar.")
+                        else:
+                            with st.spinner("A IA está escrevendo o e-mail..."):
+                                try:
+                                    _a, _c = ai.gerar_email(ia_desc_email, config=config)
+                                    st.session_state["email_assunto_field"] = _a
+                                    st.session_state["email_corpo_field"] = _c
+                                    st.rerun()
+                                except Exception as _e:
+                                    st.error(f"Erro ao gerar com IA: {_e}")
+
+            assunto = st.text_input("Assunto", key="email_assunto_field")
+            corpo = st.text_area("Corpo do e-mail", height=200, key="email_corpo_field")
             st.markdown("<small>Use <code>{nome}</code> e <code>{empresa}</code> para personalizar automaticamente.</small>", unsafe_allow_html=True)
+
+            with st.expander("💾 Salvar como template"):
+                with st.form("save_email_tmpl_form"):
+                    _nome_novo = st.text_input("Nome do template", placeholder="Ex: SLIM Biométrica")
+                    if st.form_submit_button("Salvar template", type="primary"):
+                        _n = _nome_novo.strip()
+                        if not _n:
+                            st.warning("Dê um nome ao template.")
+                        elif not (assunto.strip() or corpo.strip()):
+                            st.warning("Assunto e corpo estão vazios.")
+                        else:
+                            _achou = False
+                            for _t in config['templates']['email']:
+                                if _t['nome'] == _n:
+                                    _t['assunto'] = assunto; _t['corpo'] = corpo; _achou = True; break
+                            if not _achou:
+                                config['templates']['email'].append({'nome': _n, 'assunto': assunto, 'corpo': corpo})
+                            save_config(config)
+                            st.success(f"✅ Template '{_n}' salvo! Já aparece na lista de templates.")
 
             st.markdown("---")
             uploaded_attachments = st.file_uploader(
-                "📎 Anexos (opcional)",
+                "📎 Anexos (opcional — até 5)",
                 accept_multiple_files=True,
                 help="Os mesmos anexos serão enviados para todos os destinatários selecionados."
             )
+            if uploaded_attachments and len(uploaded_attachments) > 5:
+                st.warning("⚠️ Máximo de 5 anexos. Serão usados apenas os 5 primeiros.")
+                uploaded_attachments = uploaded_attachments[:5]
 
         with col_right:
             st.subheader("Filtrar Destinatários")
             status_f = st.multiselect("Status dos leads", db.get_status_options(), default=["Novo"])
             seg_f = st.multiselect("Segmento", db.get_segmento_options())
+
+            st.markdown("---")
+            modo_envio = st.radio(
+                "Velocidade de envio",
+                ["🚀 Rápido (poucos e-mails)", "🐢 Envio em massa (grandes listas)"],
+                help="Rápido: 4s entre e-mails, ideal para até ~90 envios. "
+                     "Envio em massa: 40s entre e-mails (90/hora), respeita o limite da Locaweb "
+                     "e não trava em listas grandes.")
+            intervalo_envio = 4 if "Rápido" in modo_envio else 40
 
         # Filter leads
         targets = leads_com_email.copy()
@@ -737,6 +796,23 @@ elif page == "E-mail":
         st.markdown(f"---\n**{len(targets)} lead(s) serão contactados**")
 
         if not targets.empty:
+            # Tempo estimado conforme a velocidade escolhida
+            _seg_total = max(0, len(targets) - 1) * intervalo_envio
+            _h = _seg_total // 3600
+            _min = (_seg_total % 3600) // 60
+            _seg = _seg_total % 60
+            _tempo = (f"{_h}h {_min}min" if _h else (f"{_min}min {_seg}s" if _min else f"{_seg}s"))
+            if intervalo_envio == 40:
+                st.info(f"⏱️ Envio em massa: ~{_tempo} para {len(targets)} e-mail(s) "
+                        f"(1 a cada 40s = 90/hora, respeitando o limite da Locaweb). "
+                        f"Deixe o computador ligado e não feche a aba durante o envio.")
+                if len(targets) > 90:
+                    st.warning("⚠️ Mais de 90 e-mails: como a Locaweb permite 100 por hora "
+                               "por caixa, o envio vai levar mais de 1 hora — isso é normal e seguro.")
+            else:
+                st.info(f"⏱️ Envio rápido: ~{_tempo} para {len(targets)} e-mail(s) (1 a cada 4s). "
+                        f"Ideal para listas pequenas. Para mais de ~90 e-mails, use o Envio em massa "
+                        f"para não travar no limite da Locaweb.")
             st.dataframe(
                 targets[['nome', 'empresa', 'email', 'status']].rename(
                     columns={'nome': 'Nome', 'empresa': 'Empresa', 'email': 'E-mail', 'status': 'Status'}),
@@ -764,22 +840,44 @@ elif page == "E-mail":
                 errors = []
 
                 for i, (_, lead) in enumerate(targets.iterrows()):
-                    status_text.markdown(f"Enviando para **{lead['nome']}**...")
-                    try:
-                        es.send_email(
-                            lead['email'], lead['nome'], lead.get('empresa', ''),
-                            assunto, corpo,
-                            attachment_paths=attachment_paths or None
-                        )
+                    status_text.markdown(f"Enviando para **{lead['nome']}**... ({i+1}/{len(targets)})")
+
+                    # Tenta enviar; se o servidor pedir para desacelerar (452),
+                    # espera progressivamente e tenta de novo (até 3 tentativas).
+                    enviado = False
+                    ultimo_erro = ""
+                    for tentativa in range(3):
+                        try:
+                            es.send_email(
+                                lead['email'], lead['nome'], lead.get('empresa', ''),
+                                assunto, corpo,
+                                attachment_paths=attachment_paths or None
+                            )
+                            enviado = True
+                            break
+                        except Exception as e:
+                            ultimo_erro = str(e)
+                            # Bloqueio temporário por excesso de velocidade
+                            if "too many" in ultimo_erro.lower() or "slow down" in ultimo_erro.lower() or "452" in ultimo_erro:
+                                espera = 30 * (tentativa + 1)  # 30s, 60s, 90s
+                                status_text.markdown(
+                                    f"⏳ Servidor pediu para desacelerar. Aguardando {espera}s antes de reenviar para **{lead['nome']}**...")
+                                time.sleep(espera)
+                            else:
+                                break  # outro erro: não adianta repetir
+
+                    if enviado:
                         db.log_envio(lead['id'], 'email', selected_template_name)
                         db.update_lead_status(lead['id'], 'Email Enviado')
                         success_count += 1
-                    except Exception as e:
+                    else:
                         error_count += 1
-                        errors.append(f"{lead['nome']}: {str(e)}")
+                        errors.append(f"{lead['nome']}: {ultimo_erro}")
 
                     progress.progress((i + 1) / len(targets))
-                    time.sleep(0.5)  # Avoid spam filters
+                    # Intervalo conforme a velocidade escolhida (4s rápido / 40s em massa)
+                    if i < len(targets) - 1:
+                        time.sleep(intervalo_envio)
 
                 status_text.empty()
                 progress.empty()
@@ -838,15 +936,63 @@ elif page == "WhatsApp":
         template_names_zap = [t['nome'] for t in templates_zap]
         selected_zap_name = st.selectbox("Template WhatsApp", template_names_zap)
         template_zap = next(t for t in templates_zap if t['nome'] == selected_zap_name)
-        mensagem = st.text_area("Mensagem", value=template_zap.get('mensagem', ''), height=180)
+
+        # Carrega o template no campo quando o template selecionado muda
+        if st.session_state.get("_zap_last_tmpl") != selected_zap_name:
+            st.session_state["zap_msg_field"] = template_zap.get('mensagem', '')
+            st.session_state["_zap_last_tmpl"] = selected_zap_name
+
+        # ── Gerador com IA ────────────────────────────────────────────────
+        if ai.ia_disponivel(config):
+            with st.expander("✨ Gerar com IA", expanded=False):
+                ia_desc_zap = st.text_area(
+                    "Descreva o produto ou oferta",
+                    key="ia_zap_desc",
+                    placeholder="Ex: Torre de tomada motorizada para bancada, sobe e desce com um toque.",
+                    height=90)
+                if st.button("✨ Gerar mensagem com IA", key="ia_zap_btn"):
+                    if not ia_desc_zap.strip():
+                        st.warning("Descreva o produto para a IA gerar.")
+                    else:
+                        with st.spinner("A IA está escrevendo a mensagem..."):
+                            try:
+                                _m = ai.gerar_whatsapp(ia_desc_zap, config=config)
+                                st.session_state["zap_msg_field"] = _m
+                                st.rerun()
+                            except Exception as _e:
+                                st.error(f"Erro ao gerar com IA: {_e}")
+
+        mensagem = st.text_area("Mensagem", height=180, key="zap_msg_field")
         st.markdown("<small>Use <code>{nome}</code> e <code>{empresa}</code> para personalizar automaticamente.</small>", unsafe_allow_html=True)
 
+        with st.expander("💾 Salvar como template"):
+            with st.form("save_zap_tmpl_form"):
+                _nome_novo_z = st.text_input("Nome do template", placeholder="Ex: Torre de Tomada")
+                if st.form_submit_button("Salvar template", type="primary"):
+                    _nz = _nome_novo_z.strip()
+                    if not _nz:
+                        st.warning("Dê um nome ao template.")
+                    elif not mensagem.strip():
+                        st.warning("A mensagem está vazia.")
+                    else:
+                        _achouz = False
+                        for _tz in config['templates']['whatsapp']:
+                            if _tz['nome'] == _nz:
+                                _tz['mensagem'] = mensagem; _achouz = True; break
+                        if not _achouz:
+                            config['templates']['whatsapp'].append({'nome': _nz, 'mensagem': mensagem})
+                        save_config(config)
+                        st.success(f"✅ Template '{_nz}' salvo! Já aparece na lista de templates.")
+
         st.markdown("---")
-        uploaded_zap_file = st.file_uploader(
-            "📎 Arquivo para enviar (opcional)",
-            accept_multiple_files=False,
-            help="O mesmo arquivo será enviado para todos os contatos selecionados. Funciona apenas no modo Automático."
+        uploaded_zap_files = st.file_uploader(
+            "📎 Arquivos para enviar (opcional — até 5)",
+            accept_multiple_files=True,
+            help="Os mesmos arquivos serão enviados para todos os contatos selecionados. Funciona apenas no modo Automático."
         )
+        if uploaded_zap_files and len(uploaded_zap_files) > 5:
+            st.warning("⚠️ Máximo de 5 arquivos. Serão usados apenas os 5 primeiros.")
+            uploaded_zap_files = uploaded_zap_files[:5]
 
     # Opções dinâmicas baseadas nos leads reais (não lista fixa do config)
     status_opts_zap = sorted(leads_com_zap['status'].dropna().unique().tolist())
@@ -886,14 +1032,16 @@ elif page == "WhatsApp":
         st.info("Nenhum lead encontrado com os filtros selecionados.")
         st.stop()
 
-    # Salva o arquivo do WhatsApp em pasta temporária (se enviado)
-    zap_file_path = None
-    if uploaded_zap_file:
+    # Salva os arquivos do WhatsApp em pasta temporária (se enviados)
+    zap_file_paths = []
+    if uploaded_zap_files:
         tmp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dados", "tmp")
         os.makedirs(tmp_dir, exist_ok=True)
-        zap_file_path = os.path.join(tmp_dir, uploaded_zap_file.name)
-        with open(zap_file_path, 'wb') as f:
-            f.write(uploaded_zap_file.getvalue())
+        for uf in uploaded_zap_files:
+            fpath = os.path.join(tmp_dir, uf.name)
+            with open(fpath, 'wb') as f:
+                f.write(uf.getvalue())
+            zap_file_paths.append(fpath)
 
     # ── MODO AUTOMÁTICO ──────────────────────────────────────────────────────
     if "🤖 Automático" in modo:
@@ -908,10 +1056,11 @@ elif page == "WhatsApp":
         """, unsafe_allow_html=True)
 
         total = len(targets_zap)
-        tempo_estimado = total * (wait_time + (10 if zap_file_path else 5))
+        n_arq = len(zap_file_paths)
+        tempo_estimado = total * (wait_time + (5 + n_arq * 8 if n_arq else 5))
         minutos = tempo_estimado // 60
         segundos = tempo_estimado % 60
-        label_arquivo = f" + arquivo **{uploaded_zap_file.name}**" if zap_file_path else ""
+        label_arquivo = f" + {n_arq} arquivo(s)" if n_arq else ""
         st.info(f"⏱️ Tempo estimado: ~{minutos}min {segundos}s para {total} contato(s){label_arquivo}")
 
         if st.button(f"🚀 Enviar {total} mensagem(ns) automaticamente", type="primary"):
@@ -924,21 +1073,21 @@ elif page == "WhatsApp":
                 nome = lead['nome']
                 empresa = lead.get('empresa', '') or ''
 
-                label = f"💬📎 **{i+1}/{total}** — **{nome}** ({empresa or '—'})" if zap_file_path else f"💬 **{i+1}/{total}** — **{nome}** ({empresa or '—'})"
+                label = f"💬📎 **{i+1}/{total}** — **{nome}** ({empresa or '—'})" if zap_file_paths else f"💬 **{i+1}/{total}** — **{nome}** ({empresa or '—'})"
                 status_box.markdown(label)
 
                 is_last = (i == total - 1)
                 ok, msg_result = wh.send_whatsapp_auto(
                     lead['whatsapp'], mensagem, nome, empresa,
                     wait_time=wait_time,
-                    file_path=zap_file_path,
+                    file_paths=zap_file_paths,
                     close_tab=is_last
                 )
 
                 if ok:
                     db.log_envio(lead['id'], 'whatsapp', selected_zap_name)
                     db.update_lead_status(lead['id'], 'WhatsApp Enviado')
-                    resultados.append(f"✅ {nome}" + (" (mensagem + arquivo)" if zap_file_path else ""))
+                    resultados.append(f"✅ {nome}" + (f" (mensagem + {len(zap_file_paths)} arquivo(s))" if zap_file_paths else ""))
                 else:
                     resultados.append(f"❌ {nome}: {msg_result}")
 
@@ -967,8 +1116,8 @@ elif page == "WhatsApp":
         Clique em <strong>"📱 Abrir"</strong>, envie a mensagem e marque <strong>"✅ Enviado"</strong>.
         </div>
         """, unsafe_allow_html=True)
-        if zap_file_path:
-            st.warning(f"⚠️ O envio de arquivo **({uploaded_zap_file.name})** só funciona no modo **Automático**. No modo manual, anexe o arquivo manualmente no WhatsApp após abrir a conversa.")
+        if zap_file_paths:
+            st.warning(f"⚠️ O envio de arquivo(s) ({len(zap_file_paths)}) só funciona no modo **Automático**. No modo manual, anexe os arquivos manualmente no WhatsApp após abrir a conversa.")
 
         for _, lead in targets_zap.iterrows():
             nome = lead['nome']
@@ -1083,7 +1232,38 @@ elif page == "Configurações":
     """, unsafe_allow_html=True)
     config = load_config()
 
-    tab_email, tab_assinatura, tab_filtros, tab_templates = st.tabs(["E-mail", "🖊️ Assinatura", "🏷️ Filtros", "📝 Templates de Mensagem"])
+    tab_email, tab_assinatura, tab_ia, tab_filtros, tab_templates = st.tabs(["E-mail", "🖊️ Assinatura", "🤖 IA", "🏷️ Filtros", "📝 Templates de Mensagem"])
+
+    # ── TAB: IA (chave da API) ───────────────────────────────────────────────
+    with tab_ia:
+        st.subheader("Assistente de IA")
+        st.markdown("""
+        <div class="info-banner">
+        Com a IA ativada, você descreve o produto em poucas palavras e a ferramenta
+        gera o e-mail e a mensagem de WhatsApp prontos, personalizados e no padrão profissional.
+        </div>
+        """, unsafe_allow_html=True)
+
+        with st.form("ia_config_form"):
+            ia_key = st.text_input(
+                "Chave da API (Anthropic)",
+                value=config.get('ia', {}).get('api_key', ''),
+                type="password",
+                placeholder="sk-ant-...",
+                help="Obtenha em console.anthropic.com → API Keys. Sua chave fica salva apenas neste computador.")
+            salvar_ia = st.form_submit_button("💾 Salvar Chave", type="primary")
+
+        if salvar_ia:
+            if 'ia' not in config:
+                config['ia'] = {}
+            config['ia']['api_key'] = ia_key.strip()
+            save_config(config)
+            st.success("✅ Chave salva!" if ia_key.strip() else "Chave removida.")
+
+        if ai.ia_disponivel(config):
+            st.markdown('<div class="success-banner">🤖 IA ativada e pronta para uso nas telas de E-mail e WhatsApp.</div>', unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="warning-banner">⚠️ IA ainda não ativada. Cole sua chave acima para liberar o gerador de mensagens.</div>', unsafe_allow_html=True)
 
     # ── TAB: EMAIL CONFIG ───────────────────────────────────────────────────
     with tab_email:
